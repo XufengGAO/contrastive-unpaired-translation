@@ -4,7 +4,7 @@ from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
-
+from torch.utils.tensorboard import SummaryWriter
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -19,6 +19,8 @@ if __name__ == '__main__':
     total_iters = 0                # the total number of training iterations
 
     optimize_time = 0.1
+    # SummaryWriter instance
+    tb_writer = SummaryWriter(log_dir="./runs/default_CUT/")
 
     times = []
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
@@ -37,9 +39,9 @@ if __name__ == '__main__':
             total_iters += batch_size
             epoch_iter += batch_size
             if len(opt.gpu_ids) > 0:
-                torch.cuda.synchronize()
+                torch.cuda.synchronize() # Waits for all kernels in all streams on a CUDA device to complete.
             optimize_start_time = time.time()
-            if epoch == opt.epoch_count and i == 0:
+            if epoch == opt.epoch_count and i == 0: # only for 1st batch
                 model.data_dependent_initialize(data)
                 model.setup(opt)               # regular setup: load and print networks; create schedulers
                 model.parallelize()
@@ -56,9 +58,18 @@ if __name__ == '__main__':
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
-                visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                visualizer.print_current_losses(epoch, epoch_iter, total_iters, losses, optimize_time, t_data)
+                for k, v in losses.items():
+                    if k in ['D_real', 'D_fake']:
+                        tb_writer.add_scalars('D Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
+                    if k in ['G_GAN', 'NCE', 'NCE_Y']:
+                        tb_writer.add_scalars('G Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
+                    if k in ['G', 'D']:
+                        tb_writer.add_scalars('Total Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
+
                 if opt.display_id is None or opt.display_id > 0:
                     visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
+                
 
             if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
                 print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))

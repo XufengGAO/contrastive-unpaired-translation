@@ -21,7 +21,7 @@ class CUTModel(BaseModel):
         """
         parser.add_argument('--CUT_mode', type=str, default="CUT", choices='(CUT, cut, FastCUT, fastcut)')
 
-        parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight for GAN loss：GAN(G(X))')
+        parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight for GAN loss: GAN(G(X))')
         parser.add_argument('--lambda_NCE', type=float, default=1.0, help='weight for NCE loss: NCE(G(X), X)')
         parser.add_argument('--nce_idt', type=util.str2bool, nargs='?', const=True, default=False, help='use NCE loss for identity mapping: NCE(G(Y), Y))')
         parser.add_argument('--nce_layers', type=str, default='0,4,8,12,16', help='compute NCE loss on which layers')
@@ -58,11 +58,11 @@ class CUTModel(BaseModel):
 
         # specify the training losses you want to print out.
         # The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_GAN', 'D_real', 'D_fake', 'G', 'NCE']
+        self.loss_names = ['G_GAN', 'D_real', 'D_fake', 'G', 'NCE', 'D']
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         self.nce_layers = [int(i) for i in self.opt.nce_layers.split(',')]
 
-        if opt.nce_idt and self.isTrain:
+        if opt.nce_idt and self.isTrain:  # use identity loss
             self.loss_names += ['NCE_Y']
             self.visual_names += ['idt_B']
 
@@ -100,7 +100,7 @@ class CUTModel(BaseModel):
         """
         bs_per_gpu = data["A"].size(0) // max(len(self.opt.gpu_ids), 1)
         self.set_input(data)
-        self.real_A = self.real_A[:bs_per_gpu]
+        self.real_A = self.real_A[:bs_per_gpu]  # only take batch_size per gpu
         self.real_B = self.real_B[:bs_per_gpu]
         self.forward()                     # compute fake images: G(A)
         if self.opt.isTrain:
@@ -147,9 +147,9 @@ class CUTModel(BaseModel):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.real = torch.cat((self.real_A, self.real_B), dim=0) if self.opt.nce_idt and self.opt.isTrain else self.real_A
         if self.opt.flip_equivariance:
-            self.flipped_for_equivariance = self.opt.isTrain and (np.random.random() < 0.5)
+            self.flipped_for_equivariance = self.opt.isTrain and (np.random.random() < 0.5)  # one-shot flip
             if self.flipped_for_equivariance:
-                self.real = torch.flip(self.real, [3])
+                self.real = torch.flip(self.real, [3])  # flip horizontally
 
         self.fake = self.netG(self.real)
         self.fake_B = self.fake[:self.real_A.size(0)]
@@ -182,7 +182,7 @@ class CUTModel(BaseModel):
             self.loss_G_GAN = 0.0
 
         if self.opt.lambda_NCE > 0.0:
-            self.loss_NCE = self.calculate_NCE_loss(self.real_A, self.fake_B)
+            self.loss_NCE = self.calculate_NCE_loss(self.real_A, self.fake_B)  # check the mutual information
         else:
             self.loss_NCE, self.loss_NCE_bd = 0.0, 0.0
 
@@ -195,9 +195,9 @@ class CUTModel(BaseModel):
         self.loss_G = self.loss_G_GAN + loss_NCE_both
         return self.loss_G
 
-    def calculate_NCE_loss(self, src, tgt):
+    def calculate_NCE_loss(self, src, tgt):  # src: input of G, tgt: output of G
         n_layers = len(self.nce_layers)
-        feat_q = self.netG(tgt, self.nce_layers, encode_only=True)
+        feat_q = self.netG(tgt, self.nce_layers, encode_only=True)  # input self.nce_layers, list of layer indexes
 
         if self.opt.flip_equivariance and self.flipped_for_equivariance:
             feat_q = [torch.flip(fq, [3]) for fq in feat_q]

@@ -76,8 +76,9 @@ class Visualizer():
             if "tensorboard_base_url" not in os.environ:
                 self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)
             else:
-                self.vis = visdom.Visdom(port=2004,
-                                         base_url=os.environ['tensorboard_base_url'] + '/visdom')
+                #self.vis = visdom.Visdom(port=2004,
+                                         #base_url=os.environ['tensorboard_base_url'] + '/visdom')
+                self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)                         
             if not self.vis.check_connection():
                 self.create_visdom_connections()
 
@@ -223,7 +224,7 @@ class Visualizer():
             self.create_visdom_connections()
 
     # losses: same format as |losses| of plot_current_losses
-    def print_current_losses(self, epoch, iters, losses, t_comp, t_data):
+    def print_current_losses(self, epoch, epoch_iter, total_iter, losses, t_comp, t_data):
         """print current losses on console; also save the losses to the disk
 
         Parameters:
@@ -233,7 +234,7 @@ class Visualizer():
             t_comp (float) -- computational time per data point (normalized by batch_size)
             t_data (float) -- data loading time per data point (normalized by batch_size)
         """
-        message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
+        message = '(epoch: %d, epoch_iter: %d, total_iter: %d, time: %.3f, data: %.3f) ' % (epoch, epoch_iter, total_iter, t_comp, t_data)
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
 
