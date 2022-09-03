@@ -5,7 +5,7 @@ class Launcher(TmuxLauncher):
     def common_options(self):
         return [
             Options(
-                dataroot="./datasets/xxx",
+                dataroot="/home/xugao/gitRepo/swapping-autoencoder-pytorch/datasets/nightVisionDatasets/",
                 name="nightVision_CUT_default",
                 CUT_mode="CUT",
                 preprocess="scale_shortside_and_crop",
