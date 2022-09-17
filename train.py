@@ -5,6 +5,7 @@ from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
 from torch.utils.tensorboard import SummaryWriter
+import os
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -20,10 +21,12 @@ if __name__ == '__main__':
 
     optimize_time = 0.1
     # SummaryWriter instance
-    tb_writer = SummaryWriter(log_dir="./runs/default_CUT/")
+    if os.path.exists(opt.tb_folder) is False:
+        os.makedirs(opt.tb_folder)
+    tb_writer = SummaryWriter(log_dir=opt.tb_folder)
 
     times = []
-    """
+    
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
@@ -59,14 +62,14 @@ if __name__ == '__main__':
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
-                visualizer.print_current_losses(epoch, epoch_iter, total_iters, losses, optimize_time, t_data)
-                for k, v in losses.items():
-                    if k in ['D_real', 'D_fake']:
-                        tb_writer.add_scalars('D Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
-                    if k in ['G_GAN', 'NCE', 'NCE_Y']:
-                        tb_writer.add_scalars('G Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
-                    if k in ['G', 'D']:
-                        tb_writer.add_scalars('Total Loss', {k:float(format(v.mean(), '.3f'))}, total_iters)
+                # visualizer.print_current_losses(epoch, epoch_iter, total_iters, losses, optimize_time, t_data)
+                # for k, v in losses.items():
+                #     if k in ['D_real', 'D_fake']:
+                #         tb_writer.add_scalars('D Loss', {k:float(format(v, '.3f'))}, total_iters)
+                #     if k in ['G_GAN', 'NCE', 'NCE_Y']:
+                #         tb_writer.add_scalars('G Loss', {k:float(format(v, '.3f'))}, total_iters)
+                #     if k in ['G', 'D']:
+                #         tb_writer.add_scalars('Total Loss', {k:float(format(v, '.3f'))}, total_iters)
 
                 if opt.display_id is None or opt.display_id > 0:
                     visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
@@ -87,4 +90,4 @@ if __name__ == '__main__':
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.
-    """
+    

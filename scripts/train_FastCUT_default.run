@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --cpus-per-task=20
-#SBATCH --job-name=CUT
+#SBATCH --job-name=fastCUT
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
 #SBATCH --partition=gpu
@@ -10,8 +10,8 @@
 #SBATCH --mem=350GB
 #SBATCH --time=12:00:00
 #SBATCH --chdir /scratch/izar/xugao/trainLogs
-#SBATCH --output=/scratch/izar/xugao/trainLogs/CUT/CUT_6_%j.out
-#SBATCH --error=/scratch/izar/xugao/trainLogs/CUT/CUT_6_%j.err
+#SBATCH --output=/scratch/izar/xugao/trainLogs/fastCUT_0_%j.out
+#SBATCH --error=/scratch/izar/xugao/trainLogs/fastCUT_0_%j.err
 
 module load gcc cuda
 echo "hello from 'hostname'"
@@ -22,7 +22,7 @@ cd /home/xugao/gitRepo/contrastive-unpaired-translation
 
 python -m experiments --name nightVision \
 --cmd train \
---id 0 \
+--id 1 \
 --continue_train
 
 echo "bye from 'hostname'"

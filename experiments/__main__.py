@@ -27,9 +27,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('name')
-    parser.add_argument('cmd')
-    parser.add_argument('id', nargs='+', type=str)
+    parser.add_argument('--name')
+    parser.add_argument('--cmd')
+    parser.add_argument('--id', nargs='+', type=str)
     parser.add_argument('--mode', default=None)
     parser.add_argument('--which_epoch', default=None)
     parser.add_argument('--continue_train', action='store_true')

@@ -68,6 +68,9 @@ class BaseOptions():
         parser.add_argument('--stylegan2_G_num_downsampling',
                             default=1, type=int,
                             help='Number of downsampling layers used by StyleGAN2Generator')
+        # parameters related to StyleGAN2-based networks
+        parser.add_argument('--tb_folder',
+                            default='./runs', type=str)
 
         self.initialized = True
         return parser
